@@ -172,6 +172,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Don't push .db
+*.db
+
+
 # Pyre type checker
 .pyre/
 
