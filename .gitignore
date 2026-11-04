@@ -172,7 +172,7 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# Don't push .db
+# Don't push .db files
 *.db
 
 
@@ -220,3 +220,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Flask instance folder & local databases
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Migration temporary files (optional, but good practice)
+.pytest_cache/
