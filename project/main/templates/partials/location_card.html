@@ -1,0 +1,108 @@
+<div class="location-card">
+    {% if location %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span class="badge" style="background: rgba(66, 185, 131, 0.15); color: #42b983; border-color: rgba(66, 185, 131, 0.3);">
+                Recorded Location
+            </span>
+            <button id="toggle-edit-btn" class="btn" style="padding: 3px 8px; font-size: 0.75rem;">Edit</button>
+        </div>
+
+        <div class="location-title">
+            <span>📍</span>
+            <span>{{ location.name }}</span>
+        </div>
+
+        <!-- View Mode -->
+        <div id="view-mode">
+            <div class="section-label">Description</div>
+            <div class="section-content">
+                {{ location.description or 'No description provided.' }}
+            </div>
+
+            <div class="section-label">DM Notes / Lore</div>
+            <div class="section-content">
+                {{ location.notes or 'No notes recorded.' }}
+            </div>
+        </div>
+
+        <!-- Edit Mode (Hidden by default) -->
+        <form id="edit-location-form" style="display: none; margin-top: 14px;" onsubmit="saveLocation(event, '{{ label }}')">
+            <div class="section-label">Edit Description</div>
+            <textarea name="description" class="form-control" rows="3" placeholder="Enter location description...">{{ location.description or '' }}</textarea>
+
+            <div class="section-label" style="margin-top: 10px;">Edit Notes / Lore</div>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Enter DM notes, NPCs, secrets...">{{ location.notes or '' }}</textarea>
+
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button type="submit" class="btn btn-save">Save Changes</button>
+                <button type="button" id="cancel-edit-btn" class="btn">Cancel</button>
+            </div>
+        </form>
+
+    {% else %}
+        <span class="badge" style="background: rgba(229, 169, 60, 0.15); color: var(--accent-gold); border-color: rgba(229, 169, 60, 0.3);">
+            Unrecorded Marker
+        </span>
+
+        <div class="location-title">
+            <span>📍</span>
+            <span>{{ label }}</span>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.4;">
+            No records found in database for <strong>{{ label }}</strong>. You can add notes for this marker below:
+        </p>
+
+        <!-- New Location Form -->
+        <form id="new-location-form" onsubmit="saveLocation(event, '{{ label }}')">
+            <div class="section-label">Description</div>
+            <textarea name="description" class="form-control" rows="3" placeholder="What is this place? (e.g. Town Hall, Bakery)..."></textarea>
+
+            <div class="section-label" style="margin-top: 10px;">DM Notes / Lore</div>
+            <textarea name="notes" class="form-control" rows="3" placeholder="NPCs, rumors, quest hooks..."></textarea>
+
+            <button type="submit" class="btn btn-save" style="margin-top: 14px; width: 100%;">Save to Database</button>
+        </form>
+    {% endif %}
+
+    <div class="python-badge">
+        <small>⚡ Rendered by Flask & SQLAlchemy (Python)</small>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.85rem;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: var(--accent-gold);
+    }
+    .btn-save {
+        background: #2e7d32 !important;
+        border-color: #4caf50 !important;
+        color: #fff !important;
+    }
+    .btn-save:hover {
+        background: #388e3c !important;
+    }
+    .python-badge {
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--border-color);
+        color: #8bc34a;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+</style>

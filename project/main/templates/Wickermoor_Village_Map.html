@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wickermoor Village Map</title>
+    <!-- PDF.js Text Layer styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf_viewer.min.css">
+    <style>
+        :root {
+            --bg-dark: #12151b;
+            --surface-dark: #1e222d;
+            --surface-card: #282d3c;
+            --border-color: #363d50;
+            --accent-gold: #e5a93c;
+            --accent-gold-hover: #ffc252;
+            --text-primary: #f0f2f5;
+            --text-secondary: #9da7b7;
+            --panel-width: 380px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Navigation & Toolbar */
+        header {
+            background-color: var(--surface-dark);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-gold);
+        }
+
+        h1 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            letter-spacing: 0.5px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background: #333a4d;
+            border-color: var(--accent-gold);
+        }
+
+        .zoom-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            min-width: 55px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        /* Main Workspace Container */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 54px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Map Viewer (Canvas & TextLayer) */
+        .map-viewport {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            background-color: #0b0d11;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 30px;
+        }
+
+        #pdf-container {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        #pdf-canvas {
+            display: block;
+            border-radius: 4px;
+        }
+
+        /* Text Layer Overlay */
+        .textLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: clip;
+            opacity: 1;
+            line-height: 1;
+            transform-origin: 0 0;
+            z-index: 2;
+        }
+
+        /* Interactive Map Markers (e.g. V1, V2...) */
+        .textLayer span.interactive-marker {
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            border-radius: 4px;
+            background-color: rgba(229, 169, 60, 0.22);
+            outline: 1.5px dashed rgba(229, 169, 60, 0.85);
+            box-sizing: border-box;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .textLayer span.interactive-marker:hover {
+            background-color: rgba(255, 215, 0, 0.55);
+            outline: 2px solid #ffb300;
+            box-shadow: 0 0 12px rgba(255, 179, 0, 0.95);
+            transform: scale(1.15);
+            z-index: 100;
+        }
+
+        .textLayer span.interactive-marker.selected {
+            background-color: rgba(66, 185, 131, 0.55) !important;
+            outline: 2px solid #42b983 !important;
+            box-shadow: 0 0 14px rgba(66, 185, 131, 0.9) !important;
+            z-index: 101;
+        }
+
+        /* Hide markers halo when toggle is off */
+        .hide-halos .textLayer span.interactive-marker:not(:hover):not(.selected) {
+            background-color: transparent;
+            outline: none;
+        }
+
+        /* Side Info Panel */
+        .info-panel {
+            width: var(--panel-width);
+            background: var(--surface-dark);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+            z-index: 5;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 1.05rem;
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 4px;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .panel-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Empty state */
+        .placeholder-state {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 60px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .placeholder-icon {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* Location Card */
+        .location-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(66, 185, 131, 0.15);
+            color: #42b983;
+            border: 1px solid rgba(66, 185, 131, 0.3);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .location-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            letter-spacing: 0.5px;
+            margin-top: 14px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .section-content {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 12px;
+            border-radius: 6px;
+            line-height: 1.5;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .python-bridge-notice {
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(229, 169, 60, 0.1);
+            border-left: 3px solid var(--accent-gold);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Loading spinner */
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(229, 169, 60, 0.2);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with controls -->
+    <header>
+        <div class="header-left">
+            <a href="{{ url_for('main.index') }}" class="back-btn">← Dashboard</a>
+            <h1>Wickermoor Village Map</h1>
+        </div>
+        <div class="toolbar">
+            <button id="toggle-halos-btn" class="btn" title="Toggle marker highlight halos">Halos: ON</button>
+            <button id="zoom-out-btn" class="btn" title="Zoom Out">−</button>
+            <span id="zoom-level" class="zoom-label">100%</span>
+            <button id="zoom-in-btn" class="btn" title="Zoom In">+</button>
+            <button id="reset-zoom-btn" class="btn" title="Fit to Screen">Fit</button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        <!-- Scrollable Map Viewport -->
+        <div class="map-viewport" id="map-viewport">
+            <div id="loading" class="loading-indicator">
+                <div class="spinner"></div>
+                <span>Rendering Map with PDF.js...</span>
+            </div>
+            <div id="pdf-container" style="display: none;">
+                <canvas id="pdf-canvas"></canvas>
+                <div id="text-layer" class="textLayer"></div>
+            </div>
+        </div>
+
+        <!-- Right Side Information Panel -->
+        <aside class="info-panel" id="info-panel">
+            <div class="panel-header">
+                <h2>Location Details</h2>
+                <button id="close-panel-btn" class="close-btn" title="Close Panel">&times;</button>
+            </div>
+            <div class="panel-body" id="panel-content">
+                <div class="placeholder-state">
+                    <span class="placeholder-icon">🗺️</span>
+                    <p><strong>Interactive PDF Map</strong></p>
+                    <p>Click on any text or marker on the map (e.g. <strong>V1, V2, V3...</strong>) to open its details.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- PDF.js Module Script -->
+    <script type="module">
+        import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.mjs';
+
+        // Set worker source
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.mjs';
+
+        const pdfUrl = "{{ url_for('static', filename='documents/Wickermoor_Village_Map.pdf') }}";
+
+        // State variables
+        let pdfDoc = null;
+        let pdfPage = null;
+        let currentScale = 1.4; // Default comfortable view scale
+        let isRendering = false;
+        let selectedMarkerText = null;
+
+        // DOM Elements
+        const viewportContainer = document.getElementById('map-viewport');
+        const pdfContainer = document.getElementById('pdf-container');
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        const textLayerDiv = document.getElementById('text-layer');
+        const loadingIndicator = document.getElementById('loading');
+        const zoomLevelLabel = document.getElementById('zoom-level');
+        const panelContent = document.getElementById('panel-content');
+        const toggleHalosBtn = document.getElementById('toggle-halos-btn');
+        let showHalos = true;
+
+        // Pattern matching location markers (V1, V2, ... V28)
+        const LOCATION_PATTERN = /^V\d+$/i;
+
+        /**
+         * Load the PDF document
+         */
+        async function loadPdf() {
+            try {
+                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                pdfDoc = await loadingTask.promise;
+                pdfPage = await pdfDoc.getPage(1);
+                
+                // Initial render
+                await renderPage(currentScale);
+                loadingIndicator.style.display = 'none';
+                pdfContainer.style.display = 'block';
+            } catch (err) {
+                console.error("Error loading PDF with PDF.js:", err);
+                loadingIndicator.innerHTML = `
+                    <span style="color: #ff6b6b;">⚠️ Failed to load PDF file.</span>
+                    <small style="color: var(--text-secondary);">${err.message}</small>
+                `;
+            }
+        }
+
+        /**
+         * Render the Canvas and PDF.js TextLayer
+         */
+        async function renderPage(scale) {
+            if (isRendering || !pdfPage) return;
+            isRendering = true;
+
+            zoomLevelLabel.textContent = `${Math.round(scale * 100 / 1.4)}%`;
+
+            // Calculate viewport
+            const viewport = pdfPage.getViewport({ scale });
+            const outputScale = window.devicePixelRatio || 1;
+
+            // Set canvas dimensions
+            canvas.width = Math.floor(viewport.width * outputScale);
+            canvas.height = Math.floor(viewport.height * outputScale);
+            canvas.style.width = `${Math.floor(viewport.width)}px`;
+            canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+            // Set container dimensions
+            pdfContainer.style.width = `${Math.floor(viewport.width)}px`;
+            pdfContainer.style.height = `${Math.floor(viewport.height)}px`;
+
+            // Render Canvas
+            const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+            const renderContext = {
+                canvasContext: ctx,
+                transform: transform,
+                viewport: viewport
+            };
+
+            await pdfPage.render(renderContext).promise;
+
+            // Setup and Render Text Layer
+            textLayerDiv.innerHTML = '';
+            textLayerDiv.style.width = `${Math.floor(viewport.width)}px`;
+            textLayerDiv.style.height = `${Math.floor(viewport.height)}px`;
+            textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
+
+            const textContentSource = await pdfPage.getTextContent();
+            const textLayer = new pdfjsLib.TextLayer({
+                textContentSource: textContentSource,
+                container: textLayerDiv,
+                viewport: viewport
+            });
+
+            await textLayer.render();
+
+            // Enhance text layer elements with interactive marker classes
+            enhanceTextMarkers();
+
+            isRendering = false;
+        }
+
+        /**
+         * Scans TextLayer DOM spans and attaches marker styling & tooltips
+         */
+        function enhanceTextMarkers() {
+            const spans = textLayerDiv.querySelectorAll('span');
+            spans.forEach(span => {
+                const text = span.textContent.trim();
+                if (LOCATION_PATTERN.test(text) || text.length > 0) {
+                    span.classList.add('interactive-marker');
+                    span.setAttribute('title', `Click to inspect: ${text}`);
+
+                    if (selectedMarkerText && text.toUpperCase() === selectedMarkerText.toUpperCase()) {
+                        span.classList.add('selected');
+                    }
+                }
+            });
+        }
+
+        /**
+         * Handles clicking a text element in the Text Layer
+         */
+        textLayerDiv.addEventListener('click', (event) => {
+            const span = event.target.closest('span');
+            if (!span) return;
+
+            const text = span.textContent.trim();
+            if (!text) return;
+
+            // Update selection state
+            selectedMarkerText = text;
+            textLayerDiv.querySelectorAll('span.selected').forEach(el => el.classList.remove('selected'));
+            span.classList.add('selected');
+
+            // Display in info panel
+            displayLocationDetails(text);
+        });
+
+        /**
+         * Fetch and display location details from Python Flask endpoint
+         */
+        async function displayLocationDetails(locationName) {
+            panelContent.innerHTML = `
+                <div style="text-align: center; padding: 40px 10px; color: var(--accent-gold);">
+                    <div class="spinner" style="margin: 0 auto 12px auto;"></div>
+                    <p style="font-size: 0.9rem;">Fetching details for <strong>${locationName}</strong> from Flask...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`/locations/${encodeURIComponent(locationName)}`);
+                if (!response.ok) {
+                    throw new Error(`Server returned HTTP ${response.status}`);
+                }
+                const html = await response.text();
+                panelContent.innerHTML = html;
+                attachCardListeners();
+            } catch (err) {
+                console.error("Error fetching location data from Flask:", err);
+                panelContent.innerHTML = `
+                    <div class="location-card" style="border-color: #f44336;">
+                        <span class="badge" style="background: rgba(244, 67, 54, 0.15); color: #f44336;">Error</span>
+                        <div class="location-title">Failed to load data</div>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem;">${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Attaches listeners for edit and save forms in the rendered card
+         */
+        function attachCardListeners() {
+            const toggleEditBtn = document.getElementById('toggle-edit-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            const viewMode = document.getElementById('view-mode');
+            const editForm = document.getElementById('edit-location-form');
+
+            if (toggleEditBtn && editForm && viewMode) {
+                toggleEditBtn.addEventListener('click', () => {
+                    const isEditing = editForm.style.display !== 'none';
+                    editForm.style.display = isEditing ? 'none' : 'block';
+                    viewMode.style.display = isEditing ? 'block' : 'none';
+                    toggleEditBtn.textContent = isEditing ? 'Edit' : 'Cancel';
+                });
+            }
+
+            if (cancelEditBtn && editForm && viewMode && toggleEditBtn) {
+                cancelEditBtn.addEventListener('click', () => {
+                    editForm.style.display = 'none';
+                    viewMode.style.display = 'block';
+                    toggleEditBtn.textContent = 'Edit';
+                });
+            }
+        }
+
+        /**
+         * Save location details to Flask (Python)
+         */
+        window.saveLocation = async function(event, locationName) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            panelContent.innerHTML = `
+                <div style="text-align: center; padding: 40px 10px; color: var(--accent-gold);">
+                    <div class="spinner" style="margin: 0 auto 12px auto;"></div>
+                    <p style="font-size: 0.9rem;">Saving to database via Python...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`/locations/${encodeURIComponent(locationName)}/save`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    throw new Error(`Save failed with HTTP ${response.status}`);
+                }
+                const html = await response.text();
+                panelContent.innerHTML = html;
+                attachCardListeners();
+            } catch (err) {
+                console.error("Save error:", err);
+                alert("Failed to save location details: " + err.message);
+                displayLocationDetails(locationName);
+            }
+        };
+
+        // Toolbar Button Event Listeners
+        document.getElementById('zoom-in-btn').addEventListener('click', () => {
+            currentScale = Math.min(currentScale + 0.25, 3.5);
+            renderPage(currentScale);
+        });
+
+        document.getElementById('zoom-out-btn').addEventListener('click', () => {
+            currentScale = Math.max(currentScale - 0.25, 0.7);
+            renderPage(currentScale);
+        });
+
+        document.getElementById('reset-zoom-btn').addEventListener('click', () => {
+            currentScale = 1.4;
+            renderPage(currentScale);
+        });
+
+        toggleHalosBtn.addEventListener('click', () => {
+            showHalos = !showHalos;
+            viewportContainer.classList.toggle('hide-halos', !showHalos);
+            toggleHalosBtn.textContent = `Halos: ${showHalos ? 'ON' : 'OFF'}`;
+        });
+
+        document.getElementById('close-panel-btn').addEventListener('click', () => {
+            selectedMarkerText = null;
+            textLayerDiv.querySelectorAll('span.selected').forEach(el => el.classList.remove('selected'));
+            panelContent.innerHTML = `
+                <div class="placeholder-state">
+                    <span class="placeholder-icon">🗺️</span>
+                    <p><strong>Interactive PDF Map</strong></p>
+                    <p>Click on any text or marker on the map (e.g. <strong>V1, V2, V3...</strong>) to open its details.</p>
+                </div>
+            `;
+        });
+
+        // Initialize PDF rendering on page load
+        loadPdf();
+    </script>
+</body>
+</html>
