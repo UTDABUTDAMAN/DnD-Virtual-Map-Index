@@ -239,3 +239,6 @@ ENV/
 
 # Migration temporary files (optional, but good practice)
 .pytest_cache/
+
+# VSCode gitignore
+.vscode
