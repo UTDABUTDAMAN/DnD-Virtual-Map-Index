@@ -10,28 +10,49 @@
         <div class="location-title">
             <span>📍</span>
             <span>{{ location.name }}</span>
+            {% if location.name != label %}
+                <small style="font-size: 0.75rem; color: var(--accent-gold); font-weight: normal; margin-left: 6px;">({{ label }})</small>
+            {% endif %}
         </div>
 
         <!-- View Mode -->
         <div id="view-mode">
-            <div class="section-label">Description</div>
+            <div class="section-label">Name</div>
+            <div class="section-content" style="font-weight: 600; color: var(--accent-gold);">
+                {{ location.name }}
+            </div>
+
+            <div class="section-label" style="margin-top: 10px;">Description</div>
             <div class="section-content">
                 {{ location.description or 'No description provided.' }}
             </div>
 
-            <div class="section-label">DM Notes / Lore</div>
-            <div class="section-content">
-                {{ location.notes or 'No notes recorded.' }}
+            {% if current_role == 'gamemaster' %}
+            <div class="section-label" style="margin-top: 10px; display: flex; align-items: center; gap: 6px;">
+                <span>🛡️</span>
+                <span>DM Notes / Secrets (GM Only)</span>
             </div>
+            <div class="section-content" style="border-left: 3px solid var(--accent-gold); background: rgba(229, 169, 60, 0.08);">
+                {{ location.notes or 'No GM notes recorded.' }}
+            </div>
+            {% endif %}
         </div>
 
         <!-- Edit Mode (Hidden by default) -->
         <form id="edit-location-form" style="display: none; margin-top: 14px;" onsubmit="saveLocation(event, '{{ label }}')">
-            <div class="section-label">Edit Description</div>
+            <div class="section-label">Name</div>
+            <input type="text" name="name" class="form-control" value="{{ location.name }}" placeholder="Location Name (e.g. Town Hall, Bakery)" required>
+
+            <div class="section-label" style="margin-top: 10px;">Description</div>
             <textarea name="description" class="form-control" rows="3" placeholder="Enter location description...">{{ location.description or '' }}</textarea>
 
-            <div class="section-label" style="margin-top: 10px;">Edit Notes / Lore</div>
-            <textarea name="notes" class="form-control" rows="3" placeholder="Enter DM notes, NPCs, secrets...">{{ location.notes or '' }}</textarea>
+            {% if current_role == 'gamemaster' %}
+            <div class="section-label" style="margin-top: 10px; display: flex; align-items: center; gap: 6px;">
+                <span>🛡️</span>
+                <span>Edit DM Notes / Secrets (GM Only)</span>
+            </div>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Enter secret DM lore, monsters, treasures...">{{ location.notes or '' }}</textarea>
+            {% endif %}
 
             <div style="display: flex; gap: 8px; margin-top: 12px;">
                 <button type="submit" class="btn btn-save">Save Changes</button>
@@ -50,23 +71,31 @@
         </div>
 
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.4;">
-            No records found in database for <strong>{{ label }}</strong>. You can add notes for this marker below:
+            No records found in database for <strong>{{ label }}</strong>. You can record details for this location below:
         </p>
 
         <!-- New Location Form -->
         <form id="new-location-form" onsubmit="saveLocation(event, '{{ label }}')">
-            <div class="section-label">Description</div>
-            <textarea name="description" class="form-control" rows="3" placeholder="What is this place? (e.g. Town Hall, Bakery)..."></textarea>
+            <div class="section-label">Name</div>
+            <input type="text" name="name" class="form-control" value="{{ label }}" placeholder="e.g. Town Hall, Whispering Mill" required>
 
-            <div class="section-label" style="margin-top: 10px;">DM Notes / Lore</div>
-            <textarea name="notes" class="form-control" rows="3" placeholder="NPCs, rumors, quest hooks..."></textarea>
+            <div class="section-label" style="margin-top: 10px;">Description</div>
+            <textarea name="description" class="form-control" rows="3" placeholder="What is this place? Notable features, public history..."></textarea>
+
+            {% if current_role == 'gamemaster' %}
+            <div class="section-label" style="margin-top: 10px; display: flex; align-items: center; gap: 6px;">
+                <span>🛡️</span>
+                <span>DM Notes / Secrets (GM Only)</span>
+            </div>
+            <textarea name="notes" class="form-control" rows="3" placeholder="NPCs, secret rumors, quest hooks..."></textarea>
+            {% endif %}
 
             <button type="submit" class="btn btn-save" style="margin-top: 14px; width: 100%;">Save to Database</button>
         </form>
     {% endif %}
 
     <div class="python-badge">
-        <small>⚡ Rendered by Flask & SQLAlchemy (Python)</small>
+        <small>⚡ Role: <strong>{{ 'Game Master' if current_role == 'gamemaster' else 'Player' }}</strong></small>
     </div>
 </div>
 
@@ -80,8 +109,10 @@
         border-radius: 6px;
         font-family: inherit;
         font-size: 0.85rem;
-        resize: vertical;
         box-sizing: border-box;
+    }
+    textarea.form-control {
+        resize: vertical;
     }
     .form-control:focus {
         outline: none;
@@ -99,10 +130,13 @@
         margin-top: 20px;
         padding-top: 10px;
         border-top: 1px dashed var(--border-color);
-        color: #8bc34a;
+        color: var(--text-secondary);
         font-size: 0.75rem;
         display: flex;
         align-items: center;
         gap: 6px;
+    }
+    .python-badge strong {
+        color: var(--accent-gold);
     }
 </style>

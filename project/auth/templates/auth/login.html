@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wickermoor Village - Role Login</title>
+    <style>
+        :root {
+            --bg-dark: #12151b;
+            --surface-dark: #1e222d;
+            --surface-card: #282d3c;
+            --border-color: #363d50;
+            --accent-gold: #e5a93c;
+            --accent-gold-hover: #ffc252;
+            --text-primary: #f0f2f5;
+            --text-secondary: #9da7b7;
+            --danger-bg: rgba(244, 67, 54, 0.15);
+            --danger-border: rgba(244, 67, 54, 0.4);
+            --danger-text: #ff6b6b;
+            --success-bg: rgba(76, 175, 80, 0.15);
+            --success-border: rgba(76, 175, 80, 0.4);
+            --success-text: #81c784;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--surface-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        .login-header {
+            padding: 28px 24px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(180deg, rgba(229, 169, 60, 0.08) 0%, transparent 100%);
+        }
+
+        .app-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .login-body {
+            padding: 24px;
+        }
+
+        /* Flash messages */
+        .alerts {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .alert-error {
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            color: var(--danger-text);
+        }
+
+        .alert-success {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            color: var(--success-text);
+        }
+
+        .alert-info {
+            background: rgba(33, 150, 243, 0.15);
+            border: 1px solid rgba(33, 150, 243, 0.35);
+            color: #64b5f6;
+        }
+
+        .role-section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* Role Selector Buttons */
+        .role-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .role-btn {
+            background: var(--surface-card);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+        }
+
+        .role-btn:hover {
+            border-color: rgba(229, 169, 60, 0.6);
+            background: #31374a;
+            transform: translateY(-2px);
+        }
+
+        .role-btn.active {
+            border-color: var(--accent-gold);
+            background: rgba(229, 169, 60, 0.12);
+            box-shadow: 0 0 16px rgba(229, 169, 60, 0.25);
+        }
+
+        .role-icon {
+            font-size: 1.8rem;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .role-name {
+            font-size: 1rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .role-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.3;
+            display: block;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(229, 169, 60, 0.2);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--accent-gold);
+            color: #0d0f13;
+            border: none;
+            border-radius: 8px;
+            padding: 13px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-submit:hover {
+            background: var(--accent-gold-hover);
+            box-shadow: 0 4px 14px rgba(229, 169, 60, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .login-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <header class="login-header">
+            <span class="app-icon">🗺️</span>
+            <h1>Wickermoor Village</h1>
+            <p class="subtitle">Virtual Interactive Map & Archive</p>
+        </header>
+
+        <div class="login-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alerts">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'error' if category == 'error' else ('success' if category == 'success' else 'info') }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="role-section-title">Step 1: Choose Your Role</div>
+            <div class="role-grid">
+                <button type="button" 
+                        class="role-btn {% if selected_role == 'gamemaster' %}active{% endif %}" 
+                        id="btn-role-gamemaster"
+                        onclick="selectRole('gamemaster')">
+                    <span class="role-icon">🛡️</span>
+                    <span class="role-name">Game Master</span>
+                    <span class="role-desc">Full DM lore, secrets & note-editing</span>
+                </button>
+
+                <button type="button" 
+                        class="role-btn {% if selected_role == 'player' %}active{% endif %}" 
+                        id="btn-role-player"
+                        onclick="selectRole('player')">
+                    <span class="role-icon">⚔️</span>
+                    <span class="role-name">Player</span>
+                    <span class="role-desc">Explore village & discover public locations</span>
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}" id="login-form">
+                <input type="hidden" name="role" id="role-input" value="{{ selected_role }}">
+                {% if request.args.get('next') %}
+                    <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="password-input" id="password-label">
+                        Enter {{ 'Game Master' if selected_role == 'gamemaster' else 'Player' }} Password:
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="password" 
+                               name="password" 
+                               id="password-input" 
+                               class="form-input" 
+                               placeholder="••••••••••••" 
+                               required 
+                               autocomplete="current-password"
+                               autofocus>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submit-btn">
+                    Enter Wickermoor as {{ 'Game Master' if selected_role == 'gamemaster' else 'Player' }}
+                </button>
+            </form>
+        </div>
+
+        <footer class="login-footer">
+            DnD Virtual Map Index &bull; Secure Role-Based Authentication
+        </footer>
+    </div>
+
+    <script>
+        function selectRole(role) {
+            const roleInput = document.getElementById('role-input');
+            const gmBtn = document.getElementById('btn-role-gamemaster');
+            const playerBtn = document.getElementById('btn-role-player');
+            const label = document.getElementById('password-label');
+            const submitBtn = document.getElementById('submit-btn');
+            const passwordInput = document.getElementById('password-input');
+
+            roleInput.value = role;
+
+            if (role === 'gamemaster') {
+                gmBtn.classList.add('active');
+                playerBtn.classList.remove('active');
+                label.textContent = 'Enter Game Master Password:';
+                submitBtn.textContent = 'Enter Wickermoor as Game Master';
+            } else {
+                playerBtn.classList.add('active');
+                gmBtn.classList.remove('active');
+                label.textContent = 'Enter Player Password:';
+                submitBtn.textContent = 'Enter Wickermoor as Player';
+            }
+
+            passwordInput.focus();
+        }
+    </script>
+</body>
+</html>

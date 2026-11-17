@@ -110,6 +110,41 @@
             font-family: monospace;
         }
 
+        .role-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .gm-pill {
+            background: rgba(229, 169, 60, 0.15);
+            color: var(--accent-gold);
+            border: 1px solid rgba(229, 169, 60, 0.4);
+        }
+
+        .player-pill {
+            background: rgba(66, 185, 131, 0.15);
+            color: #42b983;
+            border: 1px solid rgba(66, 185, 131, 0.4);
+        }
+
+        .logout-btn {
+            border-color: rgba(244, 67, 54, 0.4) !important;
+            color: #ff8a80 !important;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: rgba(244, 67, 54, 0.2) !important;
+            border-color: #ff5252 !important;
+            color: #fff !important;
+        }
+
         /* Main Workspace Container */
         .workspace {
             display: flex;
@@ -347,8 +382,12 @@
     <!-- Header with controls -->
     <header>
         <div class="header-left">
-            <a href="{{ url_for('main.index') }}" class="back-btn">← Dashboard</a>
             <h1>Wickermoor Village Map</h1>
+            {% if current_role == 'gamemaster' %}
+                <span class="role-pill gm-pill" title="Logged in as Game Master">🛡️ Game Master</span>
+            {% else %}
+                <span class="role-pill player-pill" title="Logged in as Player">⚔️ Player</span>
+            {% endif %}
         </div>
         <div class="toolbar">
             <button id="toggle-halos-btn" class="btn" title="Toggle marker highlight halos">Halos: ON</button>
@@ -356,6 +395,7 @@
             <span id="zoom-level" class="zoom-label">100%</span>
             <button id="zoom-in-btn" class="btn" title="Zoom In">+</button>
             <button id="reset-zoom-btn" class="btn" title="Fit to Screen">Fit</button>
+            <a href="{{ url_for('auth.logout') }}" class="btn logout-btn" title="Log out / Switch role">Log Out</a>
         </div>
     </header>
 
@@ -396,7 +436,7 @@
         // Set worker source
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.mjs';
 
-        const pdfUrl = "{{ url_for('static', filename='documents/Wickermoor_Village_Map.pdf') }}";
+        const pdfUrl = "{{ url_for('main.get_wickermoor_pdf') }}";
 
         // State variables
         let pdfDoc = null;
@@ -528,6 +568,7 @@
             selectedMarkerText = text;
             textLayerDiv.querySelectorAll('span.selected').forEach(el => el.classList.remove('selected'));
             span.classList.add('selected');
+            console.log("We are here clickin on this badboy.....")
 
             // Display in info panel
             displayLocationDetails(text);
@@ -616,6 +657,7 @@
                 }
                 const html = await response.text();
                 panelContent.innerHTML = html;
+                console.log("HELLO WE ARE WSAVING HERE!");
                 attachCardListeners();
             } catch (err) {
                 console.error("Save error:", err);
